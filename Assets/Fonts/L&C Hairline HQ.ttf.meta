@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6785add5bac6cab4d9eb244d2f128e1e
+guid: 709048d0ccae9894e93dc7a823e28502
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -8,9 +8,9 @@ TrueTypeFontImporter:
   characterSpacing: 0
   characterPadding: 1
   includeFontData: 1
-  fontName: PerfectDOSVGA437
+  fontName: L&C Hairline HQ
   fontNames:
-  - PerfectDOSVGA437
+  - L&C Hairline HQ
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

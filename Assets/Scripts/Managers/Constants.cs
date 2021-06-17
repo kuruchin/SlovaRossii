@@ -6,7 +6,7 @@ public class Constants
 {
     public const int MAX_PLAYER_IN_ROOM = 20;
 
-    public const bool IS_TEST_MODE = true;
+    public const bool IS_TEST_MODE = false;
 
     public const int PICKED_WORD_EMPTY = -1;
     public const int PICKED_WORD_SKIP_TURN = -2;
