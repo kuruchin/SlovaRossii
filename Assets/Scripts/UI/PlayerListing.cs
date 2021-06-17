@@ -5,11 +5,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class PlayerListing : MonoBehaviourPunCallbacks
 {
     [SerializeField]
-    private Text _text;
+    private TextMeshProUGUI _text;
 
     public Player Player { get; private set; }
 
@@ -38,7 +39,7 @@ public class PlayerListing : MonoBehaviourPunCallbacks
         //}
         //_text.text = result.ToString() + ", " + player.NickName;
         _text.text = player.NickName;
-        if(player.IsLocal)
-            _text.fontStyle = FontStyle.Bold;
+        if (player.IsLocal)
+            _text.fontStyle = FontStyles.Bold;
     }
 }

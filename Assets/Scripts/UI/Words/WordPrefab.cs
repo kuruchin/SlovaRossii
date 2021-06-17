@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class WordPrefab : MonoBehaviour
 {
@@ -15,7 +16,7 @@ public class WordPrefab : MonoBehaviour
     [SerializeField]
     private int WordState;
     [SerializeField]
-    private Text WordText;
+    private TextMeshProUGUI WordText;
     [SerializeField]
     private ColorTheme colorTheme;
     [SerializeField]
