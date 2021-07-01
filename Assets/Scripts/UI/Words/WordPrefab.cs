@@ -17,6 +17,7 @@ public class WordPrefab : MonoBehaviour
     private int WordState;
     [SerializeField]
     private TextMeshProUGUI WordText;
+    private Shadow shadow;
     [SerializeField]
     private ColorTheme colorTheme;
     [SerializeField]
@@ -27,27 +28,31 @@ public class WordPrefab : MonoBehaviour
 
     private ExitGames.Client.Photon.Hashtable _myCustomProperties = new ExitGames.Client.Photon.Hashtable();
 
-    private void Start()
+    public void Initialize(int wordState, string wordText)
     {
+        shadow = FindObjectOfType<Shadow>();
         colorTheme = FindObjectOfType<ColorTheme>();
         mainManager = FindObjectOfType<MainManager>();
         testTimer = FindObjectOfType<Photon.Pun.UtilityScripts.TestTimer>();
-    }
-
-    public void SetupWords(int wordState, string wordText)
-    {
         WordState = wordState;
         WordText.text = wordText;
-        //ChangeColor();
     }
 
-    //public void ChangeColor()
-    //{
-    //    if ((bool)PhotonNetwork.LocalPlayer.CustomProperties["Captain"] == true)
-    //    {
-    //        ShowTrueColorOfWord();
-    //    }
-    //}
+    public void ShowWordsOnEndGame()
+    {
+        // Disable Shadow
+        // Recolor text
+        // do transparent by disable bool
+
+        if (isOpen)
+        {
+            MakeWordTransparent();
+        }
+        else
+        {
+            ShowTrueColorOfWord();
+        }
+    }
 
     public void ShowTrueColorOfWord()
     {
@@ -57,9 +62,12 @@ public class WordPrefab : MonoBehaviour
     private void MakeWordTransparent()
     {
         //Color of back
-        this.GetComponent<Image>().color = Transparenting(this.GetComponent<Image>().color);
+        //this.GetComponent<Image>().color = Transparenting(this.GetComponent<Image>().color);
+        this.GetComponent<Button>().interactable = false;
         //Color of text
         WordText.color = Transparenting(WordText.color);
+        // Off shadow
+        shadow.enabled = false;
     }
 
     private Color Transparenting(Color inputColor)

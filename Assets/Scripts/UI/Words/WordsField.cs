@@ -10,7 +10,7 @@ using TMPro;
 public class WordsField : MonoBehaviourPunCallbacks
 {
     [SerializeField]
-    private TestDictionary testDictionary;
+    private Dictionaries testDictionary;
 
     private string[] tempDictionary;
 
@@ -70,10 +70,10 @@ public class WordsField : MonoBehaviourPunCallbacks
 
     public void SetupGameConstant()
     {
-        maxWords = SetupGameFieldCount();
+        SetupGameFieldCount(initDropdownGameField.value);
 
         PhotonView photonView = PhotonView.Get(this);
-        photonView.RPC("RPC_SetupVar", RpcTarget.AllBuffered, maxWords);
+        photonView.RPC("RPC_SetupVar", RpcTarget.OthersBuffered, initDropdownGameField.value); //rework
 
         wordStateFirstTeam = (int)initSliderPlayersWords.value;
         wordStateSecondTeam = wordStateFirstTeam - 1;
@@ -106,11 +106,11 @@ public class WordsField : MonoBehaviourPunCallbacks
         }
     }
 
-    private int SetupGameFieldCount()
+    private void SetupGameFieldCount(int gameFieldSize)
     {
         int returnedValue = 0;
 
-        switch (initDropdownGameField.value)
+        switch (gameFieldSize)
         {
             // 5x5
             case 0:
@@ -143,13 +143,13 @@ public class WordsField : MonoBehaviourPunCallbacks
                 break;
         }
 
-        return returnedValue;
+        maxWords = returnedValue;
     }
 
     [PunRPC]
     private void RPC_SetupVar(int maxWordsLocal)
     {
-        maxWords = maxWordsLocal;
+        SetupGameFieldCount(maxWordsLocal);
     }
 
     public void ResetGameField()
@@ -196,7 +196,7 @@ public class WordsField : MonoBehaviourPunCallbacks
             WordPrefab _wordPrefab = Instantiate(wordPrefab, transform);
             wordPrefabMassive[j] = _wordPrefab;
             wordPrefabMassive[j].WordNumber = j;
-            wordPrefabMassive[j].SetupWords(wordState[j], wordText[j]);
+            wordPrefabMassive[j].Initialize(wordState[j], wordText[j]);
 
             if ((bool)PhotonNetwork.LocalPlayer.CustomProperties["Captain"] == true)
             {
@@ -249,7 +249,6 @@ public class WordsField : MonoBehaviourPunCallbacks
         return result;
     }
 
-
     public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
     {
         base.OnPlayerPropertiesUpdate(targetPlayer, changedProps);
@@ -262,6 +261,23 @@ public class WordsField : MonoBehaviourPunCallbacks
             _myCustomProperties = changedProps;
             RefreshPlayerIndicatorsForPlayer(targetPlayer.UserId);
             CheckForAllVoted(targetPlayer);
+        }
+    }
+
+    public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
+    {
+        if ((bool)PhotonNetwork.LocalPlayer.CustomProperties[Constants.HASH_PLAYER_IS_CAPTAIN])
+            return;
+
+        if (propertiesThatChanged.ContainsKey(Constants.HASH_ROOM_GAME_PHASE))
+        {
+            if((MainManager.GamePhase)propertiesThatChanged[Constants.HASH_ROOM_GAME_PHASE] == MainManager.GamePhase.Ending)
+            {
+                foreach (WordPrefab wordPrefab in wordPrefabMassive)
+                {
+                    wordPrefab.ShowWordsOnEndGame();
+                }
+            }
         }
     }
 

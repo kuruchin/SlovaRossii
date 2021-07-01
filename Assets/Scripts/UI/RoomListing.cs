@@ -22,13 +22,14 @@ public class RoomListing : MonoBehaviour
     {
         PhotonNetwork.JoinRoom(RoomInfo.Name);
 
-        ExitGames.Client.Photon.Hashtable _myCustomProperties = new ExitGames.Client.Photon.Hashtable();
-
-        _myCustomProperties.Add("Captain", false);
-        _myCustomProperties.Add("TeamNumber", 0);
-        _myCustomProperties.Add("WordPressed", Constants.PICKED_WORD_EMPTY);
-
-        PhotonNetwork.LocalPlayer.SetCustomProperties(_myCustomProperties);
+        ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
+        {
+            {Constants.HASH_PLAYER_IS_CAPTAIN, false},
+            {Constants.HASH_PLAYER_TEAM_NUMBER, 0},
+            {Constants.HASH_PLAYER_WORD_PRESSED, Constants.PICKED_WORD_EMPTY},
+            {Constants.HASH_PLAYER_CAPTAIN_COUNTER, 0}
+        };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
     }
 
 }

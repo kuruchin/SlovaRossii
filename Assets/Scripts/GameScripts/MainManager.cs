@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using ExitGames.Client.Photon;
 using Photon.Realtime;
+using System.Linq;
 
 
 public class MainManager : MonoBehaviourPunCallbacks
@@ -17,6 +18,8 @@ public class MainManager : MonoBehaviourPunCallbacks
     private TextMeshProUGUI firstTeamWordList;
     [SerializeField]
     private CaptainField firstCaptainField;
+    [SerializeField]
+    private ScrollRect firstScrollRect;
 
     [SerializeField]
     private TMP_InputField secondTeamWordInput;
@@ -24,6 +27,8 @@ public class MainManager : MonoBehaviourPunCallbacks
     private TextMeshProUGUI secondTeamWordList;
     [SerializeField]
     private CaptainField secondCaptainField;
+    [SerializeField]
+    private ScrollRect secondScrollRect;
 
 
     [SerializeField]
@@ -45,7 +50,7 @@ public class MainManager : MonoBehaviourPunCallbacks
     [SerializeField]
     private GameObject loseScreen;
 
-    //private GamePhase gamePhase = GamePhase.Start;
+    private bool isTrueShuffleRandom = true;
 
     public override void OnEnable()
     {
@@ -270,6 +275,10 @@ public class MainManager : MonoBehaviourPunCallbacks
     {
         //SetGamePhase(_gamePhase);
         firstTeamWordList.text = firstTeamWordList.text + word + "\n";
+        Canvas.ForceUpdateCanvases();
+        firstScrollRect.content.GetComponent<VerticalLayoutGroup>().CalculateLayoutInputVertical();
+        firstScrollRect.content.GetComponent<ContentSizeFitter>().SetLayoutVertical();
+        firstScrollRect.verticalNormalizedPosition = 0;
     }
 
     public void OnClick_SecondTeamSendWord()
@@ -298,6 +307,10 @@ public class MainManager : MonoBehaviourPunCallbacks
     {
         //SetGamePhase(_gamePhase);
         secondTeamWordList.text = secondTeamWordList.text + word + "\n";
+        Canvas.ForceUpdateCanvases();
+        secondScrollRect.content.GetComponent<VerticalLayoutGroup>().CalculateLayoutInputVertical();
+        secondScrollRect.content.GetComponent<ContentSizeFitter>().SetLayoutVertical();
+        secondScrollRect.verticalNormalizedPosition = 0;
     }
 
 
@@ -356,6 +369,19 @@ public class MainManager : MonoBehaviourPunCallbacks
                 }
             }
         }
+
+        ExitGames.Client.Photon.Hashtable localPlayerHash = PhotonNetwork.LocalPlayer.CustomProperties;
+        int captainCounter = (int)localPlayerHash[Constants.HASH_PLAYER_CAPTAIN_COUNTER];
+        if ((bool)localPlayerHash[Constants.HASH_PLAYER_IS_CAPTAIN])
+        {
+            captainCounter++;
+        }
+        
+        ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
+        {
+            {Constants.HASH_PLAYER_CAPTAIN_COUNTER, captainCounter}
+        };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
     }
 
 
@@ -457,6 +483,17 @@ public class MainManager : MonoBehaviourPunCallbacks
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
     }
 
+    public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
+    {
+        if ((bool)PhotonNetwork.LocalPlayer.CustomProperties[Constants.HASH_PLAYER_IS_CAPTAIN])
+            return;
+
+        if (propertiesThatChanged.ContainsKey(Constants.HASH_ROOM_IS_SLOTS_OPEN))
+        {
+            PhotonNetwork.CurrentRoom.IsVisible = (bool)propertiesThatChanged[Constants.HASH_ROOM_IS_SLOTS_OPEN];
+        }
+
+    }
     // pause
     public void OnClick_Pause()
     {
@@ -487,7 +524,8 @@ public class MainManager : MonoBehaviourPunCallbacks
             return;
         
         List<Player> playerList = new List<Player>();
-
+        List<int> playerCaptainCounter = new List<int>();
+        // Create Player List without players-spectators
         foreach (KeyValuePair<int, Player> playerInfo in PhotonNetwork.CurrentRoom.Players)
         {
             ExitGames.Client.Photon.Hashtable _localPlayerHash = playerInfo.Value.CustomProperties;
@@ -495,51 +533,123 @@ public class MainManager : MonoBehaviourPunCallbacks
             if ((int)_localPlayerHash[Constants.HASH_PLAYER_TEAM_NUMBER] != 0)
             {
                 playerList.Add(playerInfo.Value);
+                playerCaptainCounter.Add((int)playerInfo.Value.CustomProperties[Constants.HASH_PLAYER_CAPTAIN_COUNTER]);
             }
         }
-
+        
         // Need atleast 4 players for shuffle
-        if(playerList.Count > 3)
+        if (playerList.Count > 3)
         {
-            int maxPlayerCount = playerList.Count;
-            for (int i = 0; i < maxPlayerCount; i += 2)
+            if (isTrueShuffleRandom)
             {
-                int rnd1 = Random.Range(0, playerList.Count);
-                SetPlayerTeamNumber(playerList[rnd1], 1);
-                playerList.RemoveAt(rnd1);
+                int minCounter = playerCaptainCounter.Min();
 
-                if(playerList.Count != 0)
+                // Creating list of captains (players with less captains play)
+                List<Player> captainList = new List<Player>();
+
+                for (int i = 0; i < playerCaptainCounter.Count; i++)
                 {
-                    int rnd2 = Random.Range(0, playerList.Count);
-                    SetPlayerTeamNumber(playerList[rnd2], 2);
-                    playerList.RemoveAt(rnd2);
+                    if(playerCaptainCounter[i] == minCounter)
+                    {
+                        captainList.Add(playerList[i]);
+                    }
                 }
+
+                int randomCaptain = Random.Range(0, captainList.Count);
+
+                SetPlayerCaptain(captainList[randomCaptain], true);
+                SetPlayerTeamNumber(captainList[randomCaptain], 1); // temp, rework
+                // Removing from captain list
+                playerCaptainCounter.RemoveAt(captainList.IndexOf(captainList[randomCaptain]));
+                playerList.Remove(captainList[randomCaptain]);
+
+                
+                minCounter = playerCaptainCounter.Min();
+
+                captainList.Clear();
+                for (int i = 0; i < playerCaptainCounter.Count; i++)
+                {
+                    if (playerCaptainCounter[i] == minCounter)
+                    {
+                        captainList.Add(playerList[i]);
+                    }
+                }
+
+                randomCaptain = Random.Range(0, captainList.Count);
+
+                SetPlayerCaptain(captainList[randomCaptain], true);
+                SetPlayerTeamNumber(captainList[randomCaptain], 2); // temp, rework
+                // Removing from captain list
+                playerCaptainCounter.RemoveAt(captainList.IndexOf(captainList[randomCaptain]));
+                playerList.Remove(captainList[randomCaptain]);
+
+                // rework
+                int maxPlayerCount = playerList.Count;
+                for (int i = 0; i < maxPlayerCount; i += 2)
+                {
+                    int rnd1 = Random.Range(0, playerList.Count);
+                    SetPlayerTeamNumber(playerList[rnd1], 1);
+                    SetPlayerCaptain(playerList[rnd1], false);
+                    playerList.RemoveAt(rnd1);
+
+                    if (playerList.Count != 0)
+                    {
+                        int rnd2 = Random.Range(0, playerList.Count);
+                        SetPlayerTeamNumber(playerList[rnd2], 2);
+                        SetPlayerCaptain(playerList[rnd2], false);
+                        playerList.RemoveAt(rnd2);
+                    }
+                }
+
+
             }
-
-            List<Player> playerList1 = new List<Player>();
-            List<Player> playerList2 = new List<Player>();
-
-            foreach (KeyValuePair<int, Player> playerInfo in PhotonNetwork.CurrentRoom.Players)
+            else
             {
-                ExitGames.Client.Photon.Hashtable _localPlayerHash = playerInfo.Value.CustomProperties;
+                int maxPlayerCount = playerList.Count;
+                for (int i = 0; i < maxPlayerCount; i += 2)
+                {
+                    int rnd1 = Random.Range(0, playerList.Count);
+                    SetPlayerTeamNumber(playerList[rnd1], 1);
+                    playerList.RemoveAt(rnd1);
 
-                if ((int)_localPlayerHash[Constants.HASH_PLAYER_TEAM_NUMBER] == 1)
-                {
-                    playerList1.Add(playerInfo.Value);
-                    SetPlayerCaptain(playerInfo.Value, false);
+                    if (playerList.Count != 0)
+                    {
+                        int rnd2 = Random.Range(0, playerList.Count);
+                        SetPlayerTeamNumber(playerList[rnd2], 2);
+                        playerList.RemoveAt(rnd2);
+                    }
                 }
-                else if ((int)_localPlayerHash[Constants.HASH_PLAYER_TEAM_NUMBER] == 2)
+
+                List<Player> playerList1 = new List<Player>();
+                List<Player> playerList2 = new List<Player>();
+
+                foreach (KeyValuePair<int, Player> playerInfo in PhotonNetwork.CurrentRoom.Players)
                 {
-                    playerList2.Add(playerInfo.Value);
-                    SetPlayerCaptain(playerInfo.Value, false);
+                    ExitGames.Client.Photon.Hashtable _localPlayerHash = playerInfo.Value.CustomProperties;
+
+                    if ((int)_localPlayerHash[Constants.HASH_PLAYER_TEAM_NUMBER] == 1)
+                    {
+                        playerList1.Add(playerInfo.Value);
+                        SetPlayerCaptain(playerInfo.Value, false);
+                    }
+                    else if ((int)_localPlayerHash[Constants.HASH_PLAYER_TEAM_NUMBER] == 2)
+                    {
+                        playerList2.Add(playerInfo.Value);
+                        SetPlayerCaptain(playerInfo.Value, false);
+                    }
                 }
+                int rndCaptain1 = Random.Range(0, playerList1.Count);
+                SetPlayerCaptain(playerList1[rndCaptain1], true);
+                int rndCaptain2 = Random.Range(0, playerList1.Count);
+                SetPlayerCaptain(playerList2[rndCaptain2], true);
             }
-            int rndCaptain1 = Random.Range(0, playerList1.Count);
-            SetPlayerCaptain(playerList1[rndCaptain1], true);
-            int rndCaptain2 = Random.Range(0, playerList1.Count);
-            SetPlayerCaptain(playerList2[rndCaptain2], true);
         }
 
+    }
+
+    public void OnCLick_isTrueShuffleRandom(bool isBoolOn)
+    {
+        isTrueShuffleRandom = isBoolOn;
     }
 
     // Rework

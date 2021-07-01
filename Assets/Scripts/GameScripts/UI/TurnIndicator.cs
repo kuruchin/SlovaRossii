@@ -20,8 +20,12 @@ public class TurnIndicator : MonoBehaviourPunCallbacks
     private MainManager.GamePhase currentGamePhase;
     private int currentTeamNumber;
 
+    private ColorTheme colorTheme;
+
     public void Start()
     {
+        colorTheme = FindObjectOfType<ColorTheme>();
+        indicator.GetComponent<RawImage>().color = colorTheme.ThemeColor[neededTeamNumber];
         indicator.SetActive(false);
     }
 

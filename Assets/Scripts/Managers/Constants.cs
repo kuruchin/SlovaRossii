@@ -6,7 +6,7 @@ public class Constants
 {
     public const int MAX_PLAYER_IN_ROOM = 20;
 
-    public const bool IS_TEST_MODE = false;
+    public const bool IS_TEST_MODE = true;
 
     public const int PICKED_WORD_EMPTY = -1;
     public const int PICKED_WORD_SKIP_TURN = -2;
@@ -19,6 +19,7 @@ public class Constants
     public const string HASH_PLAYER_TEAM_NUMBER     = "TeamNumber";
     public const string HASH_PLAYER_ID_NUMBER       = "IDNumber";
     public const string HASH_PLAYER_WORD_PRESSED    = "WordPressed";
+    public const string HASH_PLAYER_CAPTAIN_COUNTER = "CaptainCounter";
 
     public const string HASH_ROOM_GAME_PHASE        = "GamePhase";
     public const string HASH_ROOM_CURRENT_TEAM      = "CurrentTeam";
