@@ -25,7 +25,7 @@ public class TransparentingOnEnable : MonoBehaviour
         alpha = 255;
         Transparenting(255);
 
-        preWait = 2 * 120;
+        preWait = 5 * 120;
     }
 
     // Update is called once per frame
